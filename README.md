@@ -71,25 +71,6 @@ build_exe.bat
 1. Install [Inno Setup](https://jrsoftware.org/isdl.php)
 2. Run `create_installer.bat` or manually compile `installer.iss`
 
-## Project Structure
-
-```
-clipnotes/
-├── app.py                      # Main Python application
-├── desktop-sticky-notes.html   # HTML/JavaScript UI
-├── clipnotes.spec              # PyInstaller configuration
-├── build_exe.bat               # Build script
-├── requirements.txt            # Python dependencies
-├── icon.ico                    # Application icon
-└── dist/                       # Build output directory
-    └── clipnotes.exe          # Compiled executable
-```
-
-## Data Storage
-
-- Notes are saved in `notes-data.json` in the same directory as the executable
-- Data persists between sessions automatically
-- Portable: Move the exe and data file together to keep your notes
 
 ## Requirements
 
@@ -154,3 +135,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Author
 
 H-ProjectX
+
