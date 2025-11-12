@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>clipnotes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        
+        #notesContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sticky-note {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #fff;
+        }
+
+        .sticky-note.behind {
+            display: none;
+        }
+
+        .note-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(250, 250, 250, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            min-height: 35px;
+            box-sizing: border-box;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .btn-add {
+            background: transparent;
+            border: none;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            padding: 0;
+        }
+
+        .btn-add:hover {
+            background: #e8e8e8;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 3px;
+        }
+
+        .color-btn {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.15);
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            border: none;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            font-size: 11px;
+            color: #666;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+        
+        .btn-icon-small {
+            background: transparent;
+            border: none;
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            font-size: 10px;
+            color: #666;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .btn-icon:hover {
+            background: #e8e8e8;
+        }
+        
+        .btn-icon-small:hover {
+            background: #e8e8e8;
+        }
+
+        .note-content {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            padding-top: 50px;
+            border: none;
+            outline: none;
+            resize: none;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            font-family: inherit;
+            background: transparent;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        .note-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .note-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .note-content::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 5px;
+        }
+
+        .note-content::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        .note-text {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            padding-top: 50px;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #333;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        
+        .note-body {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+
+        .note-text::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .note-text::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .note-text::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 5px;
+        }
+
+        .note-text::-webkit-scrollbar-thumb:hover {
+            background: #aaa;
+        }
+
+        /* Note Colors */
+        .yellow { background: #fffc9e; }
+        .orange { background: #ffd4a3; }
+        .green { background: #c5f4c5; }
+        .blue { background: #b3e5fc; }
+        .purple { background: #e1bee7; }
+        .red { background: #ffcdd2; }
+        .teal { background: #b2dfdb; }
+        .pink { background: #f8bbd0; }
+        .white { background: #ffffff; }
+
+        .yellow .note-header { background: #fffc9e; }
+        .orange .note-header { background: #ffd4a3; }
+        .green .note-header { background: #c5f4c5; }
+        .blue .note-header { background: #b3e5fc; }
+        .purple .note-header { background: #e1bee7; }
+        .red .note-header { background: #ffcdd2; }
+        .teal .note-header { background: #b2dfdb; }
+        .pink .note-header { background: #f8bbd0; }
+        .white .note-header { background: #ffffff; }
+
+        body.yellow { background: #fffc9e; }
+        body.orange { background: #ffd4a3; }
+        body.green { background: #c5f4c5; }
+        body.blue { background: #b3e5fc; }
+        body.purple { background: #e1bee7; }
+        body.red { background: #ffcdd2; }
+        body.teal { background: #b2dfdb; }
+        body.pink { background: #f8bbd0; }
+        body.white { background: #ffffff; }
+    </style>
+</head>
+<body>
+    <div id="notesContainer"></div>
+
+    <script>
+        class StickyNotesApp {
+            constructor() {
+                this.notes = [];
+                this.nextId = 1;
+                this.colors = [
+                    { name: 'white', hex: '#ffffff' },
+                    { name: 'yellow', hex: '#fffc9e' },
+                    { name: 'orange', hex: '#ffd4a3' },
+                    { name: 'green', hex: '#c5f4c5' },
+                    { name: 'blue', hex: '#b3e5fc' },
+                    { name: 'purple', hex: '#e1bee7' },
+                    { name: 'red', hex: '#ffcdd2' },
+                    { name: 'teal', hex: '#b2dfdb' },
+                    { name: 'pink', hex: '#f8bbd0' }
+                ];
+                this.init();
+            }
+
+            async init() {
+                await this.loadNotes();
+                if (this.notes.length === 0) {
+                    this.createNote();
+                } else {
+                    this.updateNoteStack();
+                    // Set body color to match current note
+                    const sortedNotes = [...this.notes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+                    const topNote = sortedNotes[sortedNotes.length - 1];
+                    if (topNote) {
+                        document.body.className = topNote.color;
+                    }
+                }
+            }
+
+            createNote() {
+                const note = {
+                    id: this.nextId++,
+                    text: '',
+                    color: 'white',
+                    isEditing: true,
+                    zIndex: this.getMaxZIndex() + 1
+                };
+
+                this.notes.push(note);
+                this.renderNote(note);
+                this.bringToFront(note.id);
+                this.updateNoteStack();
+                // Refresh the current note to update previous button visibility
+                const currentNote = this.notes.find(n => n.id === this.getCurrentNoteId());
+                if (currentNote) {
+                    this.updateNote(currentNote);
+                }
+                this.saveNotes();
+                
+                setTimeout(() => {
+                    const textarea = document.querySelector(`#note-${note.id} .note-content`);
+                    if (textarea) textarea.focus();
+                }, 100);
+            }
+
+            async renderNote(note) {
+                const noteElement = document.createElement('div');
+                noteElement.className = `sticky-note ${note.color}`;
+                noteElement.id = `note-${note.id}`;
+
+                if (note.isEditing) noteElement.classList.add('editing');
+
+                noteElement.innerHTML = this.getNoteHTML(note);
+                document.getElementById('notesContainer').appendChild(noteElement);
+            }
+
+            getNoteHTML(note) {
+                const colorButtons = this.colors.map(color => 
+                    `<div class="color-btn" style="background-color: ${color.hex}" onclick="app.changeColor(${note.id}, '${color.name}')"></div>`
+                ).join('');
+
+                const hasMultipleNotes = this.notes.length > 1;
+                const editIcon = note.isEditing ? '✓' : '✎';
+                
+                return `
+                    <div class="note-header">
+                        <div class="header-left">
+                            <button class="btn-add" onclick="createNote()" title="New Note">+</button>
+                            <div class="color-palette">${colorButtons}</div>
+                            ${hasMultipleNotes ? `<button class="btn-icon-small" onclick="app.previousNote()" title="Previous Note">◀</button>` : ''}
+                        </div>
+                        <div class="note-actions">
+                            <button class="btn-icon" onclick="app.toggleEdit({id: ${note.id}})" title="Edit">${editIcon}</button>
+                            <button class="btn-icon" onclick="app.deleteNote(${note.id})" title="Delete">×</button>
+                        </div>
+                    </div>
+                    <div class="note-body">
+                        ${note.isEditing ? 
+                            `<textarea class="note-content" onblur="app.saveNoteText(${note.id}, this.value)" onkeydown="app.handleKeyDown(event, ${note.id})" placeholder="Type your note here...">${note.text}</textarea>` :
+                            `<div class="note-text" ondblclick="app.toggleEdit({id: ${note.id}})">
+                                ${note.text || 'Double-click to edit'}
+                            </div>`
+                        }
+                    </div>
+                `;
+            }
+
+            toggleEdit(note) {
+                const noteObj = this.notes.find(n => n.id === note.id);
+                if (!noteObj) return;
+
+                noteObj.isEditing = !noteObj.isEditing;
+                this.updateNote(noteObj);
+                
+                if (noteObj.isEditing) {
+                    setTimeout(() => {
+                        const textarea = document.querySelector(`#note-${note.id} .note-content`);
+                        if (textarea) {
+                            textarea.focus();
+                            textarea.select();
+                        }
+                    }, 100);
+                }
+            }
+
+            saveNoteText(noteId, text) {
+                const note = this.notes.find(n => n.id === noteId);
+                if (note) {
+                    note.text = text;
+                    note.isEditing = false;
+                    this.updateNote(note);
+                    this.saveNotes();
+                }
+            }
+
+            handleKeyDown(event, noteId) {
+                if (event.key === 'Escape') {
+                    const note = this.notes.find(n => n.id === noteId);
+                    if (note) {
+                        note.isEditing = false;
+                        this.updateNote(note);
+                    }
+                }
+            }
+
+            updateNote(note) {
+                const noteElement = document.getElementById(`note-${note.id}`);
+                if (noteElement) {
+                    noteElement.className = `sticky-note ${note.color}`;
+                    if (note.isEditing) noteElement.classList.add('editing');
+                    noteElement.innerHTML = this.getNoteHTML(note);
+                    this.updateNavigationButtons(note.id);
+                    
+                    // Re-focus textarea if editing
+                    if (note.isEditing) {
+                        setTimeout(() => {
+                            const textarea = document.querySelector(`#note-${note.id} .note-content`);
+                            if (textarea) {
+                                textarea.focus();
+                                // Move cursor to end
+                                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+                            }
+                        }, 50);
+                    }
+                }
+                this.updateNoteStack();
+            }
+
+            updateNavigationButtons(noteId) {
+                // Navigation buttons are now always visible when there are multiple notes
+                // This method is kept for compatibility but the logic is in getNoteHTML
+            }
+
+            bringToFront(noteId) {
+                const note = this.notes.find(n => n.id === noteId);
+                if (note) {
+                    note.zIndex = this.getMaxZIndex() + 1;
+                    const noteElement = document.getElementById(`note-${noteId}`);
+                    if (noteElement) {
+                        noteElement.style.zIndex = note.zIndex;
+                    }
+                    this.updateNoteStack();
+                    this.saveNotes();
+                }
+            }
+
+            updateNoteStack() {
+                const sortedNotes = [...this.notes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+                const topNote = sortedNotes[sortedNotes.length - 1];
+                
+                this.notes.forEach(note => {
+                    const noteElement = document.getElementById(`note-${note.id}`);
+                    if (noteElement) {
+                        if (note.id === topNote?.id) {
+                            noteElement.classList.add('active');
+                            noteElement.classList.remove('behind');
+                            noteElement.style.display = 'block';
+                            this.updateNavigationButtons(note.id);
+                            // Update body background to match current note color
+                            document.body.className = note.color;
+                        } else {
+                            noteElement.classList.add('behind');
+                            noteElement.classList.remove('active');
+                            noteElement.style.display = 'none';
+                        }
+                    }
+                });
+            }
+
+            nextNote() {
+                if (this.notes.length <= 1) return;
+                const sortedNotes = [...this.notes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+                const currentIndex = sortedNotes.findIndex(n => n.id === this.getCurrentNoteId());
+                const nextIndex = (currentIndex + 1) % sortedNotes.length;
+                this.bringToFront(sortedNotes[nextIndex].id);
+            }
+
+            previousNote() {
+                if (this.notes.length <= 1) return;
+                const sortedNotes = [...this.notes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+                const currentIndex = sortedNotes.findIndex(n => n.id === this.getCurrentNoteId());
+                const prevIndex = (currentIndex - 1 + sortedNotes.length) % sortedNotes.length;
+                this.bringToFront(sortedNotes[prevIndex].id);
+            }
+
+            getCurrentNoteId() {
+                const sortedNotes = [...this.notes].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+                return sortedNotes[sortedNotes.length - 1]?.id;
+            }
+
+            changeColor(noteId, color) {
+                const note = this.notes.find(n => n.id === noteId);
+                if (note) {
+                    note.color = color;
+                    this.updateNote(note);
+                    // Update body background to match note color
+                    document.body.className = color;
+                    this.saveNotes();
+                }
+            }
+
+            deleteNote(noteId) {
+                this.notes = this.notes.filter(n => n.id !== noteId);
+                const noteElement = document.getElementById(`note-${noteId}`);
+                if (noteElement) {
+                    noteElement.remove();
+                }
+                if (this.notes.length === 0) {
+                    this.createNote();
+                } else {
+                    this.updateNoteStack();
+                    // Refresh the current note to update previous button visibility
+                    const currentNote = this.notes.find(n => n.id === this.getCurrentNoteId());
+                    if (currentNote) {
+                        this.updateNote(currentNote);
+                    }
+                }
+                this.saveNotes();
+            }
+
+            getMaxZIndex() {
+                return Math.max(1, ...this.notes.map(n => n.zIndex || 1));
+            }
+
+
+
+            saveNotes() {
+                try {
+                    const result = save_notes(this.notes, this.nextId);
+                    if (result && result.success) {
+                        return;
+                    }
+                } catch (e) {
+                    // Fall through to localStorage
+                }
+                
+                try {
+                    localStorage.setItem('stickyNotes', JSON.stringify(this.notes));
+                    localStorage.setItem('nextId', this.nextId.toString());
+                } catch (err) {
+                    // Silently handle error
+                }
+            }
+
+            loadNotes() {
+                try {
+                    const result = load_notes();
+                    if (result && result.success && result.data) {
+                        this.notes = result.data.notes || [];
+                        this.nextId = result.data.nextId || 1;
+                        this.notes.forEach(note => this.renderNote(note));
+                        this.updateNoteStack();
+                        return;
+                    }
+                } catch (e) {
+                    // Fall through to localStorage
+                }
+                
+                try {
+                    const saved = localStorage.getItem('stickyNotes');
+                    if (saved) {
+                        this.notes = JSON.parse(saved);
+                        this.nextId = parseInt(localStorage.getItem('nextId')) || 1;
+                        this.notes.forEach(note => this.renderNote(note));
+                        this.updateNoteStack();
+                    }
+                } catch (err) {
+                    // Silently handle error
+                }
+            }
+        }
+
+        function createNote() {
+            app.createNote();
+        }
+
+        const app = new StickyNotesApp();
+
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'n') {
+                e.preventDefault();
+                createNote();
+            }
+        });
+    </script>
+</body>
+</html>
